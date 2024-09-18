@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spelling Game</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body,
+    html {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f4f4f4;
+    }
+
+    .game-container {
+      text-align: center;
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .word-text {
+      font-size: 1.5rem;
+      margin: 20px 0;
+    }
+
+    .start-button,
+    .repeat-button,
+    .restart-button {
+      font-size: 2rem;
+      cursor: pointer;
+    }
+
+    .animated-text span {
+      animation: color-change 3s infinite alternate;
+    }
+
+    @keyframes color-change {
+      0% {
+        color: blue;
+      }
+
+      50% {
+        color: red;
+      }
+
+      100% {
+        color: green;
+      }
+    }
+
+    .option {
+      margin: 10px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .option:hover {
+      background: #eee;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="game-container" id="welcome" style="display: block;">
+    <h1 class="animated-text">
+      <span>Press</span> <span>the</span> <span>start</span> <span>button</span> <span>below</span> <span>to</span>
+      <span>begin!</span>
+    </h1>
+    <i class="start-button fa fa-play"></i>
+  </div>
+
+  <div id="game" style="display: none;">
+    <p id="instruction"></p>
+    <div id="wordOptions"></div>
+    <i class="repeat-button fa fa-volume-up" onclick="speakCurrentWord()"></i>
+    <div id="timer">Time left: 60s</div>
+  </div>
+
+  <div id="result" style="display: none;">
+    <h2 id="score"></h2>
+    <i class="restart-button fa fa-redo"></i>
+  </div>
+
+  <script>
+    const words = ['heart', 'liver', 'lungs', 'kidney', 'brain'];
+    let currentWord, correctAnswers = 0, totalAnswers = 0, timer;
+
+    function startGame() {
+      document.getElementById('welcome').style.display = 'none';
+      document.getElementById('game').style.display = 'block';
+      startTimer();
+      newWord();
+    }
+
+    function newWord() {
+      currentWord = words[Math.floor(Math.random() * words.length)];
+      document.getElementById('instruction').innerText = "Click on the correct spelling of:";
+      speakCurrentWord();
+      let options = [currentWord, ...getRandomMisspellings(currentWord, 2)];
+      options.sort(() => Math.random() - 0.5); // Shuffle array
+      document.getElementById('wordOptions').innerHTML = options.map(option => `<div class="option" onclick="checkAnswer('${option}')">${option}</div>`).join('');
+    }
+
+    function getRandomMisspellings(word, count) {
+      let misspellings = [];
+      for (let i = 0; i < count; i++) {
+        let misspelled = word.split('').sort(() => 0.5 - Math.random()).join('');
+        if (!misspellings.includes(misspelled) && misspelled !== word) misspellings.push(misspelled);
+      }
+      return misspellings;
+    }
+
+    function speakCurrentWord() {
+      let utterance = new SpeechSynthesisUtterance(currentWord);
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function checkAnswer(selected) {
+      totalAnswers++;
+      if (selected === currentWord) correctAnswers++;
+      if (totalAnswers < 5) newWord();
+      else endGame();
+    }
+
+    function startTimer() {
+      let timeLeft = 60;
+      timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').innerText = `Time left: ${timeLeft}s`;
+        if (timeLeft <= 0) endGame();
+      }, 1000);
+    }
+
+    function endGame() {
+      clearInterval(timer);
+      document.getElementById('game').style.display = 'none';
+      document.getElementById('result').style.display = 'block';
+      document.getElementById('score').innerText = `${correctAnswers} out of ${totalAnswers} words you selected were correct.`;
+    }
+
+    document.querySelector('.start-button').addEventListener('click', startGame);
+    document.querySelector('.restart-button').addEventListener('click', () => location.reload());
+  </script>
+  <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+</body>
+
+</html>

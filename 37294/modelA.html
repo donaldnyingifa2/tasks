@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spelling Body Parts Game</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .game-container {
+      text-align: center;
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      width: 90%;
+    }
+
+    .welcome-text {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+
+    @keyframes colorChange {
+
+      0%,
+      100% {
+        color: #2196F3;
+      }
+
+      25% {
+        color: #4CAF50;
+      }
+
+      50% {
+        color: #FFC107;
+      }
+
+      75% {
+        color: #F44336;
+      }
+    }
+
+    .welcome-text span {
+      display: inline-block;
+      animation: colorChange 5s infinite;
+    }
+
+    .start-button,
+    .repeat-button,
+    .restart-button {
+      background: none;
+      border: none;
+      font-size: 2rem;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    .start-button:hover,
+    .repeat-button:hover,
+    .restart-button:hover {
+      transform: scale(1.1);
+    }
+
+    .word-option {
+      margin: 10px;
+      padding: 10px 20px;
+      cursor: pointer;
+      background: #e0e0e0;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+
+    #timer,
+    #score {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="game-container" id="gameContainer">
+    <div id="welcomeScreen">
+      <p class="welcome-text"><span>Press</span> <span>the</span> <span>start</span> <span>button</span>
+        <span>below</span> <span>to</span> <span>begin!</span></p>
+      <button class="start-button" onclick="startGame()"><i class="fas fa-play"></i></button>
+    </div>
+    <div id="gameScreen" style="display:none;">
+      <div id="wordOptions"></div>
+      <button class="repeat-button" onclick="speakCurrentWord()"><i class="fas fa-volume-up"></i></button>
+      <div id="timer">Time: 60s</div>
+    </div>
+    <div id="endScreen" style="display:none;">
+      <p id="score"></p>
+      <button class="restart-button" onclick="restartGame()"><i class="fas fa-redo"></i></button>
+    </div>
+  </div>
+
+  <script>
+    const bodyParts = ['heart', 'lungs', 'liver', 'kidney', 'stomach', 'intestine'];
+    let gameState = 'welcome';
+    let correctWords = 0;
+    let totalWords = 0;
+    let timerInterval;
+    let timeLeft = 60;
+
+    function startGame() {
+      document.getElementById('welcomeScreen').style.display = 'none';
+      document.getElementById('gameScreen').style.display = 'block';
+      gameState = 'playing';
+      startTimer();
+      nextWord();
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').textContent = `Time: ${timeLeft}s`;
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          endGame();
+        }
+      }, 1000);
+    }
+
+    function nextWord() {
+      if (gameState === 'playing') {
+        const currentWord = bodyParts[Math.floor(Math.random() * bodyParts.length)];
+        const options = [currentWord];
+        while (options.length < 3) {
+          let randomWord = bodyParts[Math.floor(Math.random() * bodyParts.length)];
+          if (!options.includes(randomWord)) options.push(randomWord);
+        }
+        // Shuffle options
+        options.sort(() => Math.random() - 0.5);
+
+        document.getElementById('wordOptions').innerHTML = options.map(word =>
+          `<button class="word-option" onclick="checkAnswer('${word}', '${currentWord}')">${word}</button>`
+        ).join('');
+        speakCurrentWord(currentWord);
+      }
+    }
+
+    function speakCurrentWord(word = bodyParts[Math.floor(Math.random() * bodyParts.length)]) {
+      const utterance = new SpeechSynthesisUtterance(word);
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function checkAnswer(selected, correct) {
+      totalWords++;
+      if (selected === correct) correctWords++;
+      nextWord();
+    }
+
+    function endGame() {
+      gameState = 'end';
+      document.getElementById('gameScreen').style.display = 'none';
+      document.getElementById('endScreen').style.display = 'block';
+      document.getElementById('score').textContent = `${correctWords} out of ${totalWords} words you selected were correct.`;
+    }
+
+    function restartGame() {
+      correctWords = 0;
+      totalWords = 0;
+      timeLeft = 60;
+      document.getElementById('endScreen').style.display = 'none';
+      document.getElementById('welcomeScreen').style.display = 'block';
+      gameState = 'welcome';
+    }
+  </script>
+</body>
+
+</html>
