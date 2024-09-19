@@ -324,16 +324,16 @@
         table.innerHTML = '';
 
         if (wrongChoices.length > 0) {
-          let thead = table.createTHead();
-          let headerRow = thead.insertRow();
+          let th = table.createTHead();
+          let headerRow = th.insertRow();
 
-          let cell1 = document.createElement('th');
-          cell1.textContent = 'Incorrect Spelling';
-          headerRow.appendChild(cell1);
+          let c1 = document.createElement('th');
+          c1.textContent = 'Incorrect Spelling';
+          headerRow.appendChild(c1);
 
-          let cell2 = document.createElement('th');
-          cell2.textContent = 'Correct Spelling';
-          headerRow.appendChild(cell2);
+          let c2 = document.createElement('th');
+          c2.textContent = 'Correct Spelling';
+          headerRow.appendChild(c2);
 
           let tbody = table.createTBody();
           wrongChoices.forEach(item => {
