@@ -4,39 +4,73 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Spelling Body Parts Game</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <title>Spelling Game</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
   <style>
-    .container {
+    body {
       font-family: 'Arial', sans-serif;
+      background: #f4f4f4;
+      color: #333;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
       margin: 0;
-      background: #f0f0f0;
+    }
+
+    #startButton {
+      background: #ff6b6b;
+    }
+
+    #startButton:hover {
+      background: #fb5d5d;
+    }
+
+    .timer {
       color: #333;
+      font-size: 18px;
+      font-weight: bold;
+      border: 2px solid #0f0;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #fff;
+      margin-bottom: 20px;
+      padding: 20px;
+    }
+
+    .quiz-header h1 {
+      font-size: 20px;
     }
 
     .game-container {
+      background: #f8fafe;
+      padding-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
       text-align: center;
-      background: white;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 80%;
       max-width: 500px;
-      width: 90%;
     }
 
     .welcome-text {
-      font-size: 1.5rem;
+      font-size: 1.5em;
       margin-bottom: 20px;
     }
 
     @keyframes colorChange {
       0%,
       10% {
-        color: #0f0;
+        color: #ff6b6b;
       }
 
       15%,
@@ -46,7 +80,6 @@
     }
 
     .welcome-text span {
-      display: inline-block;
       animation: colorChange 7s linear infinite;
     }
 
@@ -78,157 +111,254 @@
       animation-delay: 6s;
     }
 
-    .start-button {
-      color: #0f0;
-    }
-
-    .start-button,
-    .repeat-button,
-    .restart-button {
-      background: none;
+    button {
+      background: #ff6b6b;
       border: none;
-      font-size: 2rem;
-      cursor: pointer;
-      color: #333;
-      transition: transform 0.3s ease;
-    }
-
-    .start-button:hover,
-    .repeat-button:hover,
-    .restart-button:hover {
-      transform: scale(1.1);
-    }
-
-    .word-option {
-      margin: 10px;
       padding: 10px 20px;
+      color: white;
       cursor: pointer;
-      background: #e0e0e0;
-      border: none;
       border-radius: 5px;
-      font-size: 1rem;
-    }
-    .word-option:hover {
-      color: #e0e0e0;
-      background: #333;
+      font-size: 1em;
     }
 
-    #timer,
-    #score {
+    button:hover {
+      background: #f00;
+    }
+
+    .options button {
+      margin: 5px;
+    }
+
+    .word-options button {
+      width: 45%;
+      margin: 5px;
+      background: #fff;
+      border: 5px solid #ddd;
+      color: #333;
+    }
+
+    .word-options button:hover {
+      border-color: #cecccc;
+    }
+
+    .read-word {
+      background: #fff;
+      color: #333;
+      padding: 20px;
+      margin: 15px;
+      border-radius: 25px;
+    }
+
+    .read-word:hover {
+      background: #ddd;
+    }
+
+    .result-table {
       margin-top: 20px;
-      font-weight: bold;
+      width: 100%;
+    }
+
+    .result-table,
+    .result-table th,
+    .result-table td {
+      border: 1px solid #ddd;
+      border-collapse: collapse;
+    }
+
+    .result-table th,
+    .result-table td {
+      padding: 10px;
     }
   </style>
 </head>
 
-<body class="container">
+<body>
+
   <div class="game-container" id="gameContainer">
     <div id="welcomeScreen">
-      <p class="welcome-text">
-        <span>Press</span>
-        <span>the</span>
-        <span>start</span>
-        <span>button</span>
-        <span>below</span>
-        <span>to</span>
-        <span>begin!</span>
+      <p class="welcome-text"><span>Press</span> <span>the</span> <span>start</span> <span>button</span>
+        <span>below</span> <span>to</span> <span>begin!</span>
       </p>
-      <button class="start-button" onclick="startGame()"><i class="fas fa-play"></i></button>
+      <button id="startButton"><i class="fas fa-play"></i></button>
     </div>
+
+    <div id="selectionScreen" style="display:none;">
+      <h2>Choose Game Duration:</h2>
+      <div class="options">
+        <button onclick="startGame(10)">10s</button>
+        <button onclick="startGame(30)">30s</button>
+        <button onclick="startGame(60)">1min</button>
+      </div>
+    </div>
+
     <div id="gameScreen" style="display:none;">
-      <div id="wordOptions"></div>
-      <button class="repeat-button" onclick="speakCurrentWord()"><i class="fas fa-volume-up"></i></button>
-      <div id="timer">Time: 60s</div>
+      <div class="quiz-header">
+        <h1>Spelling Quiz</h1>
+        <div id="timer" class="timer"><span id="time">0</span></div>
+      </div>
+      <button class="read-word" onclick="speakCurrentWord()"><i class="fas fa-volume-up"> Replay Word</i></button>
+      <div id="wordOptions" class="word-options"></div>
     </div>
-    <div id="endScreen" style="display:none;">
-      <p id="score"></p>
-      <button class="restart-button" onclick="restartGame()"><i class="fas fa-redo"></i></button>
+
+    <div id="resultScreen" style="display:none;">
+      <h2>Results</h2>
+      <p id="resultText"></p>
+      <button onclick="restartGame()">Restart</button>
+      <table id="mistakesTable" class="result-table"></table>
     </div>
   </div>
 
   <script>
-    const bodyParts = ['heart', 'lungs', 'liver', 'kidney', 'stomach', 'intestine'];
-    let gameState = 'welcome';
-    let correctWords = 0;
-    let totalWords = 0;
-    let timerInterval;
-    let timeLeft = 60;
-    let currentWord;
-
-    function startGame() {
+    document.getElementById('startButton').addEventListener('click', () => {
       document.getElementById('welcomeScreen').style.display = 'none';
-      document.getElementById('gameScreen').style.display = 'block';
-      gameState = 'playing';
-      startTimer();
-      nextWord();
+      document.getElementById('selectionScreen').style.display = 'block';
+    });
+
+    let words = [];
+    let correctWords = [];
+    let wrongChoices = [];
+    let currentWordIndex = 0;
+    let timeLeft = 0;
+    let totalTime;
+    let timer;
+
+    // Assume this function fetches words from an API
+    function fetchWords(duration) {
+      return fetch(`https://random-word-api.herokuapp.com/word?number=${duration*2}`)
+        .then(response => response.json())
+        .then(data => {
+          words = data.map(word => [word, ...generateMisspellings(word)]);
+        });
     }
 
-    function startTimer() {
-      timerInterval = setInterval(() => {
-        timeLeft--;
-        document.getElementById('timer').textContent = `Time: ${timeLeft}s`;
-        if (timeLeft <= 0) {
-          clearInterval(timerInterval);
-          endGame();
-        }
-      }, 1000);
-    }
-
-    function misspell(word) {
-      const index = Math.floor(Math.random() * (word.length - 1));
-      return (
-        word.slice(0, index) +
-        word[index + 1] +
-        word[index] +
-        word.slice(index + 2)
-      );
-    }
-
-    function nextWord() {
-      if (gameState === 'playing') {
-        currentWord = bodyParts[Math.floor(Math.random() * bodyParts.length)];
-        const options = [currentWord];
-        while (options.length < 3) {
-          let misspelledWord = misspell(currentWord);
-          if (!options.includes(misspelledWord)) options.push(misspelledWord);
-        }
-        // Shuffle options
-        options.sort(() => Math.random() - 0.5);
-
-        document.getElementById('wordOptions').innerHTML = options.map(word =>
-          `<button class="word-option" onclick="checkAnswer('${word}', '${currentWord}')">${word}</button>`
-        ).join('');
-        speakCurrentWord(currentWord);
+    function generateMisspellings(word) {
+      // Simple misspelling generation logic
+      let misspellings = [];
+      for (let i = 0; i < 3; i++) {
+        let misspelled = word.split('');
+        let idx = Math.floor(Math.random() * word.length);
+        misspelled[idx] = String.fromCharCode(97 + Math.floor(Math.random() * 26)); // Random lowercase letter
+        misspellings.push(misspelled.join(''));
       }
+      return misspellings;
     }
 
-    function speakCurrentWord(word = currentWord) {
-      const utterance = new SpeechSynthesisUtterance(word);
+    function startGame(duration) {
+      document.getElementById('selectionScreen').style.display = 'none';
+      document.getElementById('gameScreen').style.display = 'block';
+      document.getElementById('time').textContent = duration;
+      timeLeft = duration;
+      totalTime = duration;
+
+      fetchWords(duration).then(() => {
+        startRound();
+        timer = setInterval(updateTimer, 1000);
+      });
+    }
+
+    function speakCurrentWord() {
+      speak(words[currentWordIndex][0]);
+    }
+
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
       window.speechSynthesis.speak(utterance);
     }
 
-    function checkAnswer(selected, correct) {
-      totalWords++;
-      if (selected === correct) correctWords++;
-      nextWord();
+    function startRound() {
+      if (currentWordIndex < words.length) {
+        let wordOptions = document.getElementById('wordOptions');
+        wordOptions.innerHTML = '';
+        words[currentWordIndex].forEach((option, index) => {
+          let btn = document.createElement('button');
+          btn.textContent = option;
+          btn.onclick = () => checkAnswer(index);
+          wordOptions.appendChild(btn);
+        });
+        speakCurrentWord();
+      } else {
+        endGame();
+      }
+    }
+
+    function checkAnswer(index) {
+      if (index === 0) {
+        correctWords.push(words[currentWordIndex][0]);
+      } else {
+        wrongChoices.push({ chosen: words[currentWordIndex][index], correct: words[currentWordIndex][0] });
+      }
+      currentWordIndex++;
+      startRound();
+    }
+  
+    function updateTimerColor() {
+      const percentageLeft = (timeLeft / totalTime) * 100;
+      const timerElement = document.getElementById('timer');
+        if (percentageLeft > 50) {
+          timerElement.style.borderColor = '#0f0';
+        } else if (percentageLeft > 20) {
+          timerElement.style.borderColor = '#FFFF00';
+        } else {
+          timerElement.style.borderColor = '#f00';
+        }
+      }
+
+    function updateTimer() {
+      if (timeLeft > 0) {
+        document.getElementById('time').textContent = timeLeft;
+        timeLeft -= 1;
+
+        updateTimerColor()
+      } else {
+        clearInterval(timer);
+        endGame();
+      }
     }
 
     function endGame() {
-      gameState = 'end';
-      document.getElementById('gameScreen').style.display = 'none';
-      document.getElementById('endScreen').style.display = 'block';
-      document.getElementById('score').textContent = `${correctWords} out of ${totalWords} words you selected were correct.`;
-    }
+        document.getElementById('gameScreen').style.display = 'none';
+        document.getElementById('resultScreen').style.display = 'block';
+        document.getElementById('resultText').textContent = `${correctWords.length} out of ${wrongChoices.length + correctWords.length} words you selected were correct.`;
 
+        let table = document.getElementById('mistakesTable');
+        table.innerHTML = '';
+
+        if (wrongChoices.length > 0) {
+          let thead = table.createTHead();
+          let headerRow = thead.insertRow();
+
+          let cell1 = document.createElement('th');
+          cell1.textContent = 'Incorrect Spelling';
+          headerRow.appendChild(cell1);
+
+          let cell2 = document.createElement('th');
+          cell2.textContent = 'Correct Spelling';
+          headerRow.appendChild(cell2);
+
+          let tbody = table.createTBody();
+          wrongChoices.forEach(item => {
+            let row = tbody.insertRow();
+            row.insertCell(0).textContent = item.chosen;
+            row.insertCell(1).textContent = item.correct;
+          });
+
+          table.style.display = 'table';
+        } else {
+          table.style.display = 'none';
+        }
+      }
+    
     function restartGame() {
-      correctWords = 0;
-      totalWords = 0;
-      timeLeft = 60;
-      document.getElementById('endScreen').style.display = 'none';
-      document.getElementById('welcomeScreen').style.display = 'block';
-      gameState = 'welcome';
+      correctWords = [];
+      wrongChoices = [];
+      currentWordIndex = 0;
+      clearInterval(timer);
+      document.getElementById('resultScreen').style.display = 'none';
+      document.getElementById('selectionScreen').style.display = 'block';
     }
   </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/speech-synthesis@1.0.0/dist/speech-synthesis.min.js"></script>
 </body>
 
 </html>
