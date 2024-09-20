@@ -148,14 +148,14 @@
       document.getElementById('welcomeScreen').style.display = 'none';
       resetUserPosition();  // Set initial user position to the middle
       gameLoop = setInterval(gameTick, 1000 / 60);
-      spawnZombie();
+      spawnZombies();
     }
 
     function gameTick() {
       moveUser();
       moveZombies();
       moveBullets();
-      checkCollisions();
+      checkCollision();
       updateScore();
     }
 
@@ -184,7 +184,7 @@
       bullets.push(bullet);
     }
 
-    function spawnZombie() {
+    function spawnZombies() {
       const zombie = document.createElement('div');
       zombie.className = 'zombie';
       zombie.style.right = '0px';
@@ -194,7 +194,7 @@
 
       gameArea.appendChild(zombie);
       zombies.push(zombie);
-      timeoutId = setTimeout(spawnZombie, zombieFrequency);
+      timeoutId = setTimeout(spawnZombies, zombieFrequency);
     }
 
     function moveZombies() {
@@ -233,13 +233,13 @@
       });
     }
 
-    function checkCollisions() {
+    function checkCollision() {
       bullets.forEach((bullet, bIndex) => {
         zombies.forEach((zombie, zIndex) => {
           const bulletRect = bullet.getBoundingClientRect();
           const zombieRect = zombie.getBoundingClientRect();
 
-          // Bullet hits zombie
+          // bullet hits zombie
           if (
             bulletRect.left < zombieRect.right &&
             bulletRect.right > zombieRect.left &&
@@ -260,7 +260,7 @@
 
           const userRect = user.getBoundingClientRect();
 
-          // Zombie contacts the user
+          // zombie hits the user
           if (
             userRect.left < zombieRect.right &&
             userRect.right > zombieRect.left &&
@@ -270,11 +270,9 @@
             // Increment the zombie contact counter
             zombiesContacted++;
 
-            // Check if the limit has been reached
             if (zombiesContacted >= maxZombieContacts) {
               gameOver();
             } else {
-              // Remove the zombie after contact
               gameArea.removeChild(zombie);
               zombies.splice(zIndex, 1);
             }
@@ -282,6 +280,7 @@
         });
       });
     }
+
     function updateScore() {
       document.getElementById('score').textContent = `Score: ${score}`;
     }
@@ -293,7 +292,7 @@
       if (score > highScore) {
         highScore = score;
         localStorage.setItem('zombieHighScore', highScore);
-        celebrateNewHighScore();
+        celebrateNewScore();
       }
 
       document.getElementById('gameOver').style.display = 'flex';
@@ -318,9 +317,9 @@
       user.style.bottom = (gameArea.offsetHeight / 2 - user.offsetHeight / 2) + 'px';
     }
 
-    function celebrateNewHighScore() {
+    function celebrateNewScore() {
       let msg = document.getElementById('newHighScore');
-      msg.innerHTML = '<h2>New High Score! 🎉</h2>';
+      msg.innerHTML = '<h1>High Score! 🎉🎉</h1>';
       setTimeout(() => {
         msg.innerHTML = '';
       }, 3000);
