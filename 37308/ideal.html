@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Zombie Shooter</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background: rgb(189, 181, 181);
+      color: whitesmoke;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    #gameArea {
+      width: 80vw;
+      height: 80vh;
+      margin: 50px auto;
+      background: rgb(9, 9, 9);
+      border: 3px solid #aaa2a1;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+
+    #user {
+      font-size: 50px;
+      position: absolute;
+      bottom: 50;
+      left: 0;
+      color: rgb(187, 172, 172);
+    }
+
+    .zombie {
+      width: 60px;
+      height: 60px;
+      position: absolute;
+    }
+
+    .bullet {
+      width: 10px;
+      height: 5px;
+      background: rgb(235, 232, 232);
+      position: absolute;
+    }
+
+    #score {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      font-size: 24px;
+      font-weight: bolder;
+    }
+
+    #highScore {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 10;
+      font-size: 20px;
+    }
+
+    #gameOver,
+    #welcomeScreen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      font-size: larger;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 1em;
+      background-color: #e74c3c;
+
+      color: white;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #c0392b;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="gameArea">
+    <div id="user"><i class="fa-solid fa-jet-fighter"></i></div>
+    <div id="score">Score: 0</div>
+    <div id="highScore">High Score: <span id="highScoreValue">0</span></div>
+
+    <div id="gameOver" style="display:none;">
+      <h2>Game Over!</h2>
+      <div id="newHighScore"></div>
+      <button onclick="restartGame()">Restart</button>
+    </div>
+    <div id="welcomeScreen">
+      <h2>Welcome to Zombie Shooter</h2>
+      <p>Use Up/Down arrows to move. Space to shoot.</p>
+      <button onclick="startGame('easy')">Easy Mode</button>
+      <button onclick="startGame('hard')">Hard Mode</button>
+    </div>
+  </div>
+
+  <script>
+    const gameArea = document.getElementById('gameArea');
+    const user = document.getElementById('user');
+    let zombies = [];
+    let bullets = [];
+    let score = 0;
+    let highScore = localStorage.getItem('zombieHighScore') || 0;
+    let gameLoop;
+    let timeoutId;
+    let zombieSpeed = 1;
+    let zombieFrequency = 2000;
+    let zombiesContacted = 0;
+    const maxZombieContacts = 3;
+
+    function updateHighScore() {
+      document.getElementById('highScoreValue').textContent = highScore;
+    }
+
+    function startGame(difficulty) {
+      if (difficulty === 'hard') {
+        zombieSpeed = 2;
+        zombieFrequency = 1000;
+      }
+      document.getElementById('welcomeScreen').style.display = 'none';
+      resetUserPosition();  // Set initial user position to the middle
+      gameLoop = setInterval(gameTick, 1000 / 60);
+      spawnZombie();
+    }
+
+    function gameTick() {
+      moveUser();
+      moveZombies();
+      moveBullets();
+      checkCollisions();
+      updateScore();
+    }
+
+    function moveUser() {
+      document.onkeydown = function (e) {
+        switch (e.keyCode) {
+          case 38:
+            user.style.bottom = (parseInt(user.style.bottom || 0) + 10) + 'px';
+            break;
+          case 40:
+            user.style.bottom = (Math.max(parseInt(user.style.bottom || 0) - 10, 0)) + 'px';
+            break;
+          case 32:
+            shoot();
+            break;
+        }
+      };
+    }
+
+    function shoot() {
+      const bullet = document.createElement('div');
+      bullet.className = 'bullet';
+      bullet.style.left = '50px';
+      bullet.style.bottom = user.style.bottom;
+      gameArea.appendChild(bullet);
+      bullets.push(bullet);
+    }
+
+    function spawnZombie() {
+      const zombie = document.createElement('div');
+      zombie.className = 'zombie';
+      zombie.style.right = '0px';
+      zombie.style.top = Math.random() * (gameArea.offsetHeight - 50) + 'px';
+      zombie.innerHTML = `<img src="https://robohash.org/${Math.random()}?set=set2" alt="Zombie" style="width: 100%; height: 100%;">`;
+      zombie.health = 3;
+
+      gameArea.appendChild(zombie);
+      zombies.push(zombie);
+      timeoutId = setTimeout(spawnZombie, zombieFrequency);
+    }
+
+    function moveZombies() {
+      zombies.forEach((zombie, index) => {
+        let pos = zombie.offsetLeft;
+
+        // If zombie is still on screen, move it left
+        if (pos > -50) {
+          zombie.style.left = (pos - zombieSpeed) + 'px';
+        } else {
+          // If zombie gets past the user (off-screen), increase contact count
+          zombiesContacted++;
+          if (zombiesContacted >= maxZombieContacts) {
+            gameOver();
+          }
+          if (gameArea.contains(zombie)) {
+            gameArea.removeChild(zombie);
+          }
+          zombies.splice(index, 1); // Remove zombie from the array
+        }
+      });
+    }
+
+
+    function moveBullets() {
+      bullets.forEach((bullet, bIndex) => {
+        let pos = bullet.offsetLeft;
+        if (pos < gameArea.offsetWidth) {
+          bullet.style.left = (pos + 5) + 'px';
+        } else {
+          if (gameArea.contains(bullet)) {
+            gameArea.removeChild(bullet);
+          }
+          bullets.splice(bIndex, 1);
+        }
+      });
+    }
+
+    function checkCollisions() {
+      bullets.forEach((bullet, bIndex) => {
+        zombies.forEach((zombie, zIndex) => {
+          const bulletRect = bullet.getBoundingClientRect();
+          const zombieRect = zombie.getBoundingClientRect();
+
+          // Bullet hits zombie
+          if (
+            bulletRect.left < zombieRect.right &&
+            bulletRect.right > zombieRect.left &&
+            bulletRect.top < zombieRect.bottom &&
+            bulletRect.bottom > zombieRect.top
+          ) {
+            zombie.health--;
+
+            if (zombie.health <= 0) {
+              gameArea.removeChild(zombie);
+              zombies.splice(zIndex, 1);
+              score += 5;
+            }
+
+            gameArea.removeChild(bullet);
+            bullets.splice(bIndex, 1);
+          }
+
+          const userRect = user.getBoundingClientRect();
+
+          // Zombie contacts the user
+          if (
+            userRect.left < zombieRect.right &&
+            userRect.right > zombieRect.left &&
+            userRect.top < zombieRect.bottom &&
+            userRect.bottom > zombieRect.top
+          ) {
+            // Increment the zombie contact counter
+            zombiesContacted++;
+
+            // Check if the limit has been reached
+            if (zombiesContacted >= maxZombieContacts) {
+              gameOver();
+            } else {
+              // Remove the zombie after contact
+              gameArea.removeChild(zombie);
+              zombies.splice(zIndex, 1);
+            }
+          }
+        });
+      });
+    }
+    function updateScore() {
+      document.getElementById('score').textContent = `Score: ${score}`;
+    }
+
+    function gameOver() {
+      clearInterval(gameLoop);
+      clearTimeout(timeoutId);
+
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('zombieHighScore', highScore);
+        celebrateNewHighScore();
+      }
+
+      document.getElementById('gameOver').style.display = 'flex';
+      updateHighScore();
+
+      zombies.forEach(z => gameArea.removeChild(z));
+      zombies = [];
+
+      bullets.forEach(b => gameArea.removeChild(b));
+      bullets = [];
+    }
+
+    function restartGame() {
+      document.getElementById('gameOver').style.display = 'none';
+      score = 0;
+      zombies = [];
+      bullets = [];
+      startGame();
+    }
+
+    function resetUserPosition() {
+      user.style.bottom = (gameArea.offsetHeight / 2 - user.offsetHeight / 2) + 'px';
+    }
+
+    function celebrateNewHighScore() {
+      let msg = document.getElementById('newHighScore');
+      msg.innerHTML = '<h2>New High Score! 🎉</h2>';
+      setTimeout(() => {
+        msg.innerHTML = '';
+      }, 3000);
+    }
+
+    updateHighScore(); 
+  </script>
+</body>
+
+</html>

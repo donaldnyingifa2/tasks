@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Zombie Shooter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      margin: 0;
+      padding: 0;
+    }
+
+    #gameArea {
+      background: #000;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #user {
+      position: absolute;
+      bottom: 50%;
+      width: 50px;
+      height: 50px;
+    }
+
+    .zombie {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+    }
+
+    #score,
+    #highScore {
+      position: absolute;
+      top: 10px;
+      color: white;
+    }
+
+    #score {
+      left: 10px;
+    }
+
+    #highScore {
+      right: 10px;
+    }
+
+    #modeSelect,
+    #instructions {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      display: none;
+    }
+
+    button {
+      margin: 10px;
+      padding: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="gameArea">
+    <div id="user"><svg width="50" height="50">
+        <circle cx="25" cy="25" r="20" stroke="green" stroke-width="4" fill="yellow" />
+      </svg></div>
+    <div id="score">Score: 0</div>
+    <div id="highScore">High Score: 0</div>
+    <div id="modeSelect">
+      <h3>Select Mode</h3>
+      <button onclick="startGame('easy')">Easy</button>
+      <button onclick="startGame('hard')">Hard</button>
+    </div>
+    <div id="instructions">
+      <h3>How to Play</h3>
+      <p>Move up/down with arrow keys or on-screen controls. Shoot with spacebar or click.</p>
+      <button
+        onclick="document.getElementById('instructions').style.display='none'; document.getElementById('modeSelect').style.display='block';">Back</button>
+    </div>
+  </div>
+  <script>
+    const gameArea = document.getElementById('gameArea');
+    const user = document.getElementById('user');
+    let zombies = [], bullets = [];
+    let score = 0, highScore = localStorage.getItem('zombieHighScore') || 0;
+    let gameLoop, userPosition = 50, mode = 'easy';
+
+    function startGame(selectedMode) {
+      mode = selectedMode;
+      document.getElementById('modeSelect').style.display = 'none';
+      gameLoop = setInterval(gameTick, 1000 / 60);
+    }
+
+    function gameTick() {
+      moveUser();
+      spawnZombies();
+      moveZombies();
+      moveBullets();
+      checkCollisions();
+      updateScore();
+    }
+
+    function moveUser() {
+      document.onkeydown = function (e) {
+        switch (e.keyCode) {
+          case 38: userPosition -= 5; break; // Up arrow
+          case 40: userPosition += 5; break; // Down arrow
+        }
+        user.style.bottom = Math.max(0, Math.min(90, userPosition)) + '%';
+      };
+    }
+
+    function spawnZombies() {
+      if (Math.random() < (mode === 'easy' ? 0.01 : 0.02)) {
+        let zombie = document.createElement('img');
+        zombie.src = `https://robohash.org/${Math.random()}?set=set4`; // Scary set
+        zombie.className = 'zombie';
+        zombie.style.right = '0px';
+        zombie.style.top = Math.random() * 90 + '%';
+        zombie.health = 3;
+        gameArea.appendChild(zombie);
+        zombies.push(zombie);
+      }
+    }
+
+    function moveZombies() {
+      zombies.forEach(z => {
+        z.style.right = (parseFloat(z.style.right || 0) - (mode === 'easy' ? 1 : 2)) + 'px';
+        if (parseFloat(z.style.right) < -50) gameOver();
+      });
+    }
+
+    function moveBullets() {
+      document.onclick = shoot;
+      document.onkeydown = (e) => { if (e.keyCode === 32) shoot(); }; // Spacebar to shoot
+      bullets.forEach((b, index) => {
+        b.style.left = (parseFloat(b.style.left || 0) + 5) + 'px';
+        if (parseFloat(b.style.left) > window.innerWidth) bullets.splice(index, 1);
+      });
+    }
+
+    function shoot() {
+      let bullet = document.createElement('div');
+      bullet.style.position = 'absolute';
+      bullet.style.width = '5px';
+      bullet.style.height = '2px';
+      bullet.style.background = 'yellow';
+      bullet.style.left = '50px';
+      bullet.style.bottom = userPosition + '%';
+      gameArea.appendChild(bullet);
+      bullets.push(bullet);
+    }
+
+    function checkCollisions() {
+      bullets.forEach((bullet, bIndex) => {
+        zombies.forEach((zombie, zIndex) => {
+          if (isColliding(bullet, zombie)) {
+            zombie.health--;
+            if (zombie.health <= 0) {
+              gameArea.removeChild(zombie);
+              zombies.splice(zIndex, 1);
+              score += 5;
+            }
+            gameArea.removeChild(bullet);
+            bullets.splice(bIndex, 1);
+          }
+        });
+      });
+    }
+
+    function isColliding(a, b) {
+      const rect1 = a.getBoundingClientRect();
+      const rect2 = b.getBoundingClientRect();
+      return !(rect1.right < rect2.left || rect1.left > rect2.right || rect1.bottom < rect2.top || rect1.top > rect2.bottom);
+    }
+
+    function updateScore() {
+      document.getElementById('score').innerText = `Score: ${score}`;
+      document.getElementById('highScore').innerText = `High Score: ${Math.max(score, highScore)}`;
+    }
+
+    function gameOver() {
+      clearInterval(gameLoop);
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('zombieHighScore', highScore);
+        // Display celebration for 3 seconds
+        alert('New High Score! 🎉');
+      }
+      if (confirm('Game Over! Restart?')) location.reload();
+    }
+
+    // Show instructions on load
+    document.getElementById('instructions').style.display = 'block';
+  </script>
+</body>
+
+</html>
