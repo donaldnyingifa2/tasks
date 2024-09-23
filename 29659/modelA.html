@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fat Dog Game</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #f0f0f0;
+      margin: 0;
+      padding: 0;
+    }
+
+    #game-container {
+      width: 80%;
+      max-width: 600px;
+      margin: 20px auto;
+      background: white;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    #instructions,
+    #game-options {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    #game-area {
+      position: relative;
+      height: 400px;
+      background: #e0e0e0;
+      overflow: hidden;
+    }
+
+    .lane {
+      position: absolute;
+      width: 50%;
+      height: 100%;
+      border-right: 2px dashed #333;
+    }
+
+    .lane:last-child {
+      border-right: none;
+      right: 0;
+    }
+
+    #dog {
+      position: absolute;
+      bottom: 0;
+      width: 80px;
+      transition: all 0.3s;
+    }
+
+    .option {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      line-height: 40px;
+      text-align: center;
+      background: #ffeb3b;
+      border-radius: 50%;
+      top: 0;
+      transition: top 4s linear;
+    }
+
+    #score,
+    #highScore,
+    #timer {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+
+    #timer {
+      left: 10px;
+    }
+
+    button {
+      margin: 5px;
+      padding: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="game-container">
+    <div id="instructions">
+      <h2>Fat Dog</h2>
+      <p>Make the dog as fat as possible! Use arrow keys to switch lanes. Avoid getting too skinny!</p>
+    </div>
+    <div id="game-options">
+      <button onclick="startGame(5)">5s</button>
+      <button onclick="startGame(30)">30s</button>
+      <button onclick="startGame(60)">1m</button>
+      <button onclick="startGame(600)">10m</button>
+      <button onclick="startGame(1200)">20m</button>
+    </div>
+    <div id="game-area">
+      <div id="lane1" class="lane"></div>
+      <div id="lane2" class="lane"></div>
+      <img id="dog" src="dog-icon.png" alt="Dog">
+    </div>
+    <div id="score">Score: <span id="currentScore">80</span></div>
+    <div id="highScore">High Score: <span id="bestScore">0</span></div>
+    <div id="timer">Time: <span id="timeLeft">0</span>s</div>
+    <button id="restart" style="display:none;" onclick="restartGame()">Restart</button>
+  </div>
+  <script>
+    let gameInterval, timerInterval;
+    let dogSize = 80;
+    let currentLane = 1;
+    let score = 80;
+    let highScore = localStorage.getItem('fatDogHighScore') || 0;
+    let timeLeft = 0;
+
+    document.getElementById('bestScore').textContent = highScore;
+
+    function startGame(duration) {
+      resetGame();
+      timeLeft = duration;
+      document.getElementById('timeLeft').textContent = timeLeft;
+      generateOptions();
+      gameInterval = setInterval(updateGame, 100);
+      timerInterval = setInterval(updateTimer, 1000);
+      document.addEventListener('keydown', moveDog);
+    }
+
+    function updateTimer() {
+      if (timeLeft > 0) {
+        timeLeft--;
+        document.getElementById('timeLeft').textContent = timeLeft;
+      } else {
+        endGame();
+      }
+    }
+
+    function generateOptions() {
+      if (Math.random() < 0.3) {
+        const lane = Math.random() < 0.5 ? 'lane1' : 'lane2';
+        const option = document.createElement('div');
+        option.className = 'option';
+        const operation = ['+', '-', 'x', '/'][Math.floor(Math.random() * 4)];
+        const value = operation === '/' ? 2 : Math.ceil(Math.random() * 50);
+        option.textContent = `${operation}${value}`;
+        option.style.left = document.getElementById(lane).offsetLeft + 'px';
+        document.getElementById('game-area').appendChild(option);
+        setTimeout(() => {
+          if (option && option.parentNode) option.parentNode.removeChild(option);
+        }, 4000);
+      }
+      if (timeLeft > 0) setTimeout(generateOptions, 2000);
+    }
+
+    function updateGame() {
+      const options = document.querySelectorAll('.option');
+      options.forEach(option => {
+        if (checkCollision(option)) {
+          applyOption(option.textContent);
+          option.remove();
+        }
+      });
+    }
+
+    function checkCollision(option) {
+      const dogRect = document.getElementById('dog').getBoundingClientRect();
+      const optionRect = option.getBoundingClientRect();
+      return (optionRect.bottom >= dogRect.top &&
+        optionRect.left < dogRect.right &&
+        optionRect.right > dogRect.left);
+    }
+
+    function applyOption(op) {
+      const [operation, value] = [op[0], Number(op.slice(1))];
+      switch (operation) {
+        case '+': dogSize += value; break;
+        case '-': dogSize -= value; break;
+        case 'x': dogSize *= value; break;
+        case '/': dogSize = Math.max(dogSize / value, 20); break;
+      }
+      score = dogSize;
+      updateDogSize();
+      if (dogSize < 20) endGame();
+    }
+
+    function updateDogSize() {
+      const dog = document.getElementById('dog');
+      dog.style.width = `${dogSize}px`;
+      document.getElementById('currentScore').textContent = score;
+    }
+
+    function moveDog(e) {
+      if (e.key === 'ArrowLeft' && currentLane > 1) {
+        currentLane = 1;
+      } else if (e.key === 'ArrowRight' && currentLane < 2) {
+        currentLane = 2;
+      }
+      document.getElementById('dog').style.left = `calc(${currentLane === 1 ? '0%' : '50%'} + ${dogSize / 2}px - 40px)`;
+    }
+
+    function endGame() {
+      clearInterval(gameInterval);
+      clearInterval(timerInterval);
+      document.removeEventListener('keydown', moveDog);
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('fatDogHighScore', highScore);
+        document.getElementById('bestScore').textContent = highScore;
+      }
+      document.getElementById('restart').style.display = 'block';
+    }
+
+    function resetGame() {
+      dogSize = 80;
+      score = 80;
+      updateDogSize();
+      document.getElementById('restart').style.display = 'none';
+      const gameArea = document.getElementById('game-area');
+      while (gameArea.firstChild) gameArea.removeChild(gameArea.firstChild);
+    }
+
+    function restartGame() {
+      startGame(timeLeft); // Restart with the last chosen duration
+    }
+  </script>
+</body>
+
+</html>
