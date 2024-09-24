@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Test</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #f0f0f0;
+    }
+
+    .game-container {
+      margin-top: 20px;
+    }
+
+    .title {
+      display: flex;
+      align-items: center;
+    }
+
+    .title i {
+      margin-right: 10px;
+      font-size: 1.5em;
+    }
+
+    .box {
+      width: 300px;
+      height: 300px;
+      background: #fff;
+      border-radius: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 5px;
+      margin: 20px 0;
+    }
+
+    .section {
+      border-radius: 15px;
+      transition: background-color 0.3s;
+    }
+
+    .section:nth-child(1) {
+      background: red;
+    }
+
+    .section:nth-child(2) {
+      background: blue;
+    }
+
+    .section:nth-child(3) {
+      background: green;
+    }
+
+    .section:nth-child(4) {
+      background: grey;
+    }
+
+    .center-circle {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .center-circle i {
+      font-size: 1.5em;
+    }
+
+    #message {
+      color: red;
+      font-weight: bold;
+    }
+
+    #sequenceCount {
+      margin-top: 10px;
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="game-container">
+    <h2 class="title"><i class="fas fa-brain"></i>Memory Test</h2>
+    <p>Click 'Start' to see a sequence. Repeat the sequence by clicking the colored sections.</p>
+    <div class="box">
+      <div class="section" data-color="red"></div>
+      <div class="section" data-color="blue"></div>
+      <div class="section" data-color="green"></div>
+      <div class="section" data-color="grey"></div>
+      <div class="center-circle"><i class="fas fa-eye"></i></div>
+    </div>
+    <button onclick="startGame()">Start</button>
+    <div id="message"></div>
+    <div id="sequenceCount">Sequences Remembered: 0</div>
+  </div>
+
+  <script>
+    let sequence = [];
+    let userSequence = [];
+    let sequenceToGuess = 0;
+    let fails = 0;
+
+    function startGame() {
+      sequence = [];
+      userSequence = [];
+      sequenceToGuess = 0;
+      fails = 0;
+      document.getElementById('message').textContent = '';
+      document.querySelector('.center-circle i').className = "fas fa-eye";
+      generateSequence();
+      displaySequence();
+    }
+
+    function generateSequence() {
+      for (let i = 0; i < 100; i++) { // Arbitrary large number for game length
+        sequence.push(['red', 'blue', 'green', 'grey'][Math.floor(Math.random() * 4)]);
+      }
+    }
+
+    function displaySequence() {
+      sequence.forEach((color, index) => {
+        setTimeout(() => {
+          lightUp(color);
+          if (index === sequence.length - 1) {
+            setTimeout(() => {
+              document.querySelector('.center-circle i').className = "fas fa-hand-point-up";
+            }, 1000);
+          }
+        }, index * 1500);
+      });
+    }
+
+    function lightUp(color) {
+      const section = document.querySelector(`[data-color="${color}"]`);
+      const originalColor = section.style.backgroundColor;
+      section.style.backgroundColor = lightenColor(originalColor, 50);
+      setTimeout(() => {
+        section.style.backgroundColor = originalColor;
+      }, 1000);
+    }
+
+    function lightenColor(color, percent) {
+      let num = parseInt(color.replace("#", ""), 16),
+        amt = Math.round(2.55 * percent),
+        R = (num >> 16) + amt,
+        B = (num >> 8 & 0x00FF) + amt,
+        G = (num & 0x0000FF) + amt;
+      return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (B < 255 ? B < 1 ? 0 : B : 255) * 0x100 + (G < 255 ? G < 1 ? 0 : G : 255)).toString(16).slice(1);
+    }
+
+    document.querySelectorAll('.section').forEach(section => {
+      section.onclick = function () {
+        const color = this.getAttribute('data-color');
+        userSequence.push(color);
+        lightUp(color);
+        checkSequence();
+      };
+    });
+
+    function checkSequence() {
+      if (userSequence[sequenceToGuess] !== sequence[sequenceToGuess]) {
+        fails++;
+        if (fails >= 3) {
+          document.getElementById('message').textContent = "Not the brightest 😢";
+          setTimeout(() => startGame(), 2000);
+          return;
+        }
+        document.querySelector('.center-circle i').className = "fas fa-frown";
+      } else {
+        document.querySelector('.center-circle i').className = "fas fa-smile";
+        if (sequenceToGuess === sequence.length - 1) {
+          document.getElementById('sequenceCount').textContent = `Sequences Remembered: ${sequenceToGuess + 1}`;
+          setTimeout(startGame, 2000);
+          return;
+        }
+      }
+      sequenceToGuess++;
+    }
+  </script>
+</body>
+
+</html>

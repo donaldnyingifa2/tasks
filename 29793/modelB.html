@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Memory Test</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header i {
+      font-size: 24px;
+      margin-right: 10px;
+    }
+
+    #gameBoard {
+      width: 300px;
+      height: 300px;
+      margin: 20px auto;
+      border-radius: 20px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .section {
+      transition: background-color 0.5s;
+    }
+
+    #red {
+      background: #ff4d4d;
+    }
+
+    #blue {
+      background: #4d4dff;
+    }
+
+    #green {
+      background: #4dff4d;
+    }
+
+    #grey {
+      background: #d3d3d3;
+    }
+
+    .lit {
+      opacity: 0.7;
+    }
+
+    #centerCircle {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background: white;
+      border-radius: 50%;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon {
+      font-size: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <i class="fas fa-brain"></i>
+    <h1>Memory Test</h1>
+  </div>
+  <p>Click the sections in the order they light up. Three mistakes in a row and it's game over!</p>
+  <div id="gameBoard">
+    <div class="section" id="red" data-color="red"></div>
+    <div class="section" id="blue" data-color="blue"></div>
+    <div class="section" id="green" data-color="green"></div>
+    <div class="section" id="grey" data-color="grey"></div>
+    <div id="centerCircle"><i class="icon fas fa-eye"></i></div>
+  </div>
+  <div id="score">Sequences Remembered: 0</div>
+  <div id="message"></div>
+
+  <script>
+    const sections = document.querySelectorAll('.section');
+    const centerCircle = document.getElementById('centerCircle');
+    const scoreDisplay = document.getElementById('score');
+    const message = document.getElementById('message');
+    let sequence = [], userSequence = [], score = 0, mistakes = 0;
+
+    function getRandomSection() {
+      return sections[Math.floor(Math.random() * sections.length)];
+    }
+
+    function lightUp(section) {
+      section.classList.add('lit');
+      setTimeout(() => section.classList.remove('lit'), 500);
+    }
+
+    function displaySequence() {
+      centerCircle.innerHTML = '<i class="fas fa-eye"></i>';
+      let i = 0;
+      const interval = setInterval(() => {
+        lightUp(document.querySelector(`#${sequence[i]}`));
+        i++;
+        if (i >= sequence.length) clearInterval(interval);
+      }, 1000);
+    }
+
+    function checkSequence() {
+      if (JSON.stringify(userSequence) === JSON.stringify(sequence)) {
+        score++;
+        scoreDisplay.textContent = `Sequences Remembered: ${score}`;
+        centerCircle.innerHTML = '<i class="fas fa-smile"></i>';
+        mistakes = 0; // Reset mistakes on correct sequence
+      } else {
+        centerCircle.innerHTML = '<i class="fas fa-frown"></i>';
+        mistakes++;
+        if (mistakes === 3) {
+          message.innerHTML = "Not the brightest 😢";
+          setTimeout(() => message.innerHTML = '', 3000);
+          resetGame();
+        }
+      }
+      userSequence = [];
+    }
+
+    function startGame() {
+      sequence.push(getRandomSection().id);
+      displaySequence();
+    }
+
+    function resetGame() {
+      sequence = [];
+      userSequence = [];
+      score = 0;
+      mistakes = 0;
+      scoreDisplay.textContent = 'Sequences Remembered: 0';
+      centerCircle.innerHTML = ''; // Reset center icon
+    }
+
+    sections.forEach(section => {
+      section.onclick = function () {
+        userSequence.push(this.id);
+        lightUp(this);
+        if (userSequence.length === sequence.length) {
+          checkSequence();
+          if (mistakes < 3) setTimeout(startGame, 1500);
+        }
+      };
+    });
+
+    // Initial start
+    startGame();
+  </script>
+
+</body>
+
+</html>
