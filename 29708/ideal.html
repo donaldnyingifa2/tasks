@@ -26,14 +26,6 @@
       color: #006500;
     }
   
-    .even {
-      color: #32CD32;
-    }
-  
-    .odd {
-      color: #8B4514;
-    }
-  
     button {
       margin: 10px;
       padding: 10px 15px;
@@ -214,7 +206,7 @@
       if (checkCollision()) gameOver();
       draw();
       document.getElementById('score').textContent = `Score: ${score}`;
-      document.getElementById('score').className = score % 2 === 0 ? 'even' : 'odd';
+      document.getElementById('score').style.color = score % 2 === 0 ? '#32CD32' : '#8B4514';
     }
 
     function startGame() {
