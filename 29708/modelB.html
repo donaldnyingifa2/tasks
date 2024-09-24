@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Frog Jump Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f0f0f0;
+    }
+
+    #gameCanvas {
+      border: 1px solid #000;
+      background: #87CEEB;
+    }
+
+    #score {
+      font-size: 24px;
+      margin: 10px 0;
+    }
+
+    .even {
+      color: #2E8B57;
+    }
+
+    .odd {
+      color: #8B4513;
+    }
+
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="gameArea">
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="score">Score: 0</div>
+    <button id="startButton" onclick="startGame()">Start Game</button>
+    <select id="difficulty" onchange="setDifficulty(this.value)">
+      <option value="easy">Easy</option>
+      <option value="medium">Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const startButton = document.getElementById('startButton');
+    let gameLoop, frog, obstacles = [], score = 0, difficulty = 'medium';
+
+    function setDifficulty(value) {
+      difficulty = value;
+    }
+
+    function Frog() {
+      this.x = 50;
+      this.y = canvas.height - 30;
+      this.width = 30;
+      this.height = 30;
+      this.jumpPower = 0;
+      this.gravity = 0.5;
+      this.jump = function () {
+        if (this.jumpPower === 0) this.jumpPower = -10;
+      }
+    }
+
+    function Obstacle() {
+      this.width = 20 + Math.random() * 30;
+      this.height = 20 + Math.random() * 30;
+      this.x = canvas.width;
+      this.y = canvas.height - this.height;
+      this.speed = (difficulty === 'easy' ? 1 : difficulty === 'medium' ? 2 : 3) + Math.random();
+    }
+
+    function createObstacle() {
+      if (Math.random() < 0.02) obstacles.push(new Obstacle());
+    }
+
+    function updateObstacles() {
+      for (let i = 0; i < obstacles.length; i++) {
+        obstacles[i].x -= obstacles[i].speed;
+        if (obstacles[i].x + obstacles[i].width < 0) {
+          obstacles.splice(i, 1);
+          i--;
+          score++;
+        }
+      }
+    }
+
+    function checkCollision() {
+      for (let obstacle of obstacles) {
+        if (frog.x < obstacle.x + obstacle.width &&
+          frog.x + frog.width > obstacle.x &&
+          frog.y < obstacle.y + obstacle.height &&
+          frog.y + frog.height > obstacle.y) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#4CAF50";
+      ctx.fillRect(frog.x, frog.y, frog.width, frog.height);
+      obstacles.forEach(obstacle => {
+        ctx.fillStyle = "#8B4513";
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+      });
+    }
+
+    function gameOver() {
+      clearInterval(gameLoop);
+      ctx.fillStyle = "black";
+      ctx.font = "30px Arial";
+      ctx.fillText("Game Over", canvas.width / 2 - 70, canvas.height / 2);
+      startButton.disabled = false;
+    }
+
+    function loop() {
+      if (frog.jumpPower) {
+        frog.y += frog.jumpPower;
+        frog.jumpPower += frog.gravity;
+        if (frog.y >= canvas.height - frog.height) {
+          frog.y = canvas.height - frog.height;
+          frog.jumpPower = 0;
+        }
+      }
+      createObstacle();
+      updateObstacles();
+      if (checkCollision()) gameOver();
+      draw();
+      document.getElementById('score').textContent = `Score: ${score}`;
+      document.getElementById('score').className = score % 2 === 0 ? 'even' : 'odd';
+    }
+
+    function startGame() {
+      frog = new Frog();
+      obstacles = [];
+      score = 0;
+      startButton.disabled = true;
+      gameLoop = setInterval(loop, 1000 / 60);
+    }
+
+    window.addEventListener('keydown', function (e) {
+      if (e.code === 'Space') frog.jump();
+    });
+  </script>
+</body>
+
+</html>

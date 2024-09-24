@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Frog Jump Game</title>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive;
+      text-align: center;
+      background-color: #98FB97;
+    }
+  
+    #gameCanvas {
+      /* border: 2px solid #006500; */
+      background: #87CEEA;
+      border-radius: 25px;
+      background-image: url('https://cdn.pixabay.com/photo/2021/05/29/03/00/beach-6292382_1280.jpg');
+      background-size: cover;
+      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+  
+    #score {
+      font-size: 30px;
+      margin: 10px 0;
+      color: #006500;
+    }
+  
+    .even {
+      color: #32CD32;
+    }
+  
+    .odd {
+      color: #8B4514;
+    }
+  
+    button {
+      margin: 10px;
+      padding: 10px 15px;
+      font-size: 18px;
+      background-color: #32CD33;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  
+    button:hover {
+      background-color: #228B32;
+    }
+  
+    select {
+      margin: 10px;
+      padding: 10px 5px;
+      font-size: 16px;
+      background-color: #32CD33;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      outline: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="gameArea">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="score">Score: 0</div>
+    <button id="startButton" onclick="startGame()">Start Game</button>
+    <select id="difficulty" onchange="setDifficulty(this.value)">
+      <option value="easy">Easy</option>
+      <option value="medium">Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const startButton = document.getElementById('startButton');
+    let gameLoop, frog, obstacles = [], score = 0, difficulty = 'medium';
+
+    const frogImage = new Image();
+    frogImage.src = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path fill="#8B4513" d="M446.5 97.4C439.7 60.2 407.2 32 368 32c-39.2 0-71.7 28.3-78.5 65.5C126.8 113-.5 250.1 0 417 .1 451.9 29.1 480 64 480h304c8.8 0 16-7.2 16-16 0-17.7-14.3-32-32-32h-79.5l35.8-48.3c24.1-36.2 10.4-88.3-33.7-106.6-23.9-9.9-51.6-4.7-72.2 10.9l-32.8 24.6c-7.1 5.3-17.1 3.9-22.4-3.2-5.3-7.1-3.9-17.1 3.2-22.4l34.8-26.1c36.8-27.7 88.3-27.6 125.1 0 10.9 8.2 45.9 39.1 40.8 93.2L469.6 480H560c8.8 0 16-7.2 16-16 0-17.7-14.3-32-32-32h-53.6l-98.5-104.7 154.4-86.7A58.2 58.2 0 0 0 576 189.9c0-21.4-11.7-41-30.5-51.2-40.6-22.2-99-41.3-99-41.3zM368 136c-13.3 0-24-10.8-24-24 0-13.3 10.7-24 24-24 13.3 0 24 10.7 24 24 0 13.3-10.8 24-24 24z"/></svg>`);
+
+    function setDifficulty(value) {
+      difficulty = value;
+    }
+
+    function Frog() {
+      this.x = 50;
+      this.y = canvas.height - 30;
+      this.width = 30;
+      this.height = 30;
+      this.jumpPower = 0;
+      this.gravity = 0.6;
+      this.maxJumpPower = -12;
+      this.speed = 5;
+      this.moveLeft = function () {
+        if (this.x > 0) this.x -= this.speed;
+      }
+      this.moveRight = function () {
+        if (this.x + this.width < canvas.width) this.x += this.speed;
+      }
+      this.jump = function () {
+        if (this.y > 0) this.jumpPower = this.maxJumpPower;
+      };
+    }
+
+    function Obstacle() {
+      this.shape = ['rectangle', 'circle', 'triangle'][Math.floor(Math.random() * 3)];
+      this.size = 20 + Math.random() * 30;
+      this.x = canvas.width;
+      this.y = Math.random() < 0.3 ? Math.random() * (canvas.height - this.size) : canvas.height - this.size;
+      this.speed = (difficulty === 'easy' ? 1 : difficulty === 'medium' ? 2 : 3) + Math.random();
+    }
+
+    function createObstacles() {
+      if (Math.random() < (difficulty === 'easy' ? 0.01 : difficulty === 'medium' ? 0.016 : 0.02)) {
+        obstacles.push(new Obstacle());
+      }
+    }
+
+    function updateObstacles() {
+      for (let i = 0; i < obstacles.length; i++) {
+        obstacles[i].x -= obstacles[i].speed;
+        if (obstacles[i].x + obstacles[i].size < 0) {
+          obstacles.splice(i, 1);
+          i--;
+          score++;
+        }
+      }
+    }
+
+    function checkCollision() {
+      for (let obstacle of obstacles) {
+        if (obstacle.shape === 'rectangle') {
+          if (frog.x < obstacle.x + obstacle.size &&
+            frog.x + frog.width > obstacle.x &&
+            frog.y < obstacle.y + obstacle.size &&
+            frog.y + frog.height > obstacle.y) {
+            return true;
+          }
+        } else if (obstacle.shape === 'circle') {
+          let distX = frog.x - obstacle.x;
+          let distY = frog.y - obstacle.y;
+          let distance = Math.sqrt(distX * distX + distY * distY);
+          if (distance < frog.width / 2 + obstacle.size / 2) {
+            return true;
+          }
+        } else if (obstacle.shape === 'triangle') {
+          let halfSize = obstacle.size / 2;
+          let triX = obstacle.x + halfSize;
+          let triY = obstacle.y - halfSize;
+          if (frog.x < obstacle.x + obstacle.size &&
+            frog.x + frog.width > obstacle.x &&
+            frog.y < obstacle.y &&
+            frog.y + frog.height > triY) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(frogImage, frog.x, frog.y, frog.width, frog.height);
+
+      obstacles.forEach(obstacle => {
+        if (obstacle.shape === 'rectangle') {
+          ctx.fillStyle = "#8B4512";
+          ctx.fillRect(obstacle.x, obstacle.y, obstacle.size, obstacle.size);
+        } else if (obstacle.shape === 'circle') {
+          ctx.fillStyle = "#FF6346";
+          ctx.beginPath();
+          ctx.arc(obstacle.x + obstacle.size / 2, obstacle.y + obstacle.size / 2, obstacle.size / 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (obstacle.shape === 'triangle') {
+          ctx.fillStyle = "#FFD702";
+          ctx.beginPath();
+          ctx.moveTo(obstacle.x, obstacle.y);
+          ctx.lineTo(obstacle.x + obstacle.size, obstacle.y);
+          ctx.lineTo(obstacle.x + obstacle.size / 2, obstacle.y - obstacle.size);
+          ctx.closePath();
+          ctx.fill();
+        }
+      });
+    }
+
+    function gameOver() {
+      clearInterval(gameLoop);
+      ctx.fillStyle = "black";
+      ctx.font = "30px Arial";
+      ctx.fillText("Game Over", canvas.width / 2 - 70, canvas.height / 2);
+      startButton.disabled = false;
+    }
+
+    function loop() {
+      if (frog.jumpPower) {
+        frog.y += frog.jumpPower;
+        frog.jumpPower += frog.gravity;
+        if (frog.y >= canvas.height - frog.height) {
+          frog.y = canvas.height - frog.height;
+          frog.jumpPower = 0;
+        } else if (frog.y < 0) {
+          frog.y = 0;
+          frog.jumpPower += frog.gravity;
+        }
+      }
+      createObstacles();
+      updateObstacles();
+      if (checkCollision()) gameOver();
+      draw();
+      document.getElementById('score').textContent = `Score: ${score}`;
+      document.getElementById('score').className = score % 2 === 0 ? 'even' : 'odd';
+    }
+
+    function startGame() {
+      frog = new Frog();
+      obstacles = [];
+      score = 0;
+      startButton.disabled = true;
+      gameLoop = setInterval(loop, 1000 / 60);
+    }
+
+    window.addEventListener('keydown', function (e) {
+      if (e.code === 'Space') frog.jump();
+      if (e.code === 'ArrowLeft') frog.moveLeft();
+      if (e.code === 'ArrowRight') frog.moveRight();
+    });
+  </script>
+</body>
+
+</html>

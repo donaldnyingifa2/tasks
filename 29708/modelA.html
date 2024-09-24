@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frog Jump Game</title>
+  <style>
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+    }
+
+    #gameArea {
+      width: 800px;
+      height: 400px;
+      background: #90EE90;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #frog {
+      width: 50px;
+      height: 50px;
+      background-color: #008000;
+      position: absolute;
+      bottom: 0;
+      left: 50px;
+      border-radius: 50%;
+    }
+
+    .obstacle {
+      position: absolute;
+      bottom: 0;
+      background-color: #8B4513;
+    }
+
+    #score {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 24px;
+      color: black;
+    }
+
+    #startButton,
+    #restartButton {
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    #gameOver,
+    #difficultySelect {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border: 2px solid #000;
+      display: none;
+      text-align: center;
+    }
+
+    #difficultySelect select {
+      margin-top: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="gameArea">
+    <div id="frog"></div>
+    <div id="score">Score: 0</div>
+  </div>
+  <button id="startButton">Start Game</button>
+  <div id="difficultySelect">
+    <h2>Select Difficulty</h2>
+    <select id="difficulty">
+      <option value="easy">Easy</option>
+      <option value="medium">Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+  </div>
+  <div id="gameOver">
+    <h2>Game Over</h2>
+    <p>Your Score: <span id="finalScore"></span></p>
+    <button id="restartButton">Restart</button>
+  </div>
+
+  <script>
+    let gameArea = document.getElementById('gameArea');
+    let frog = document.getElementById('frog');
+    let startButton = document.getElementById('startButton');
+    let scoreDisplay = document.getElementById('score');
+    let gameOverScreen = document.getElementById('gameOver');
+    let restartButton = document.getElementById('restartButton');
+    let difficultySelect = document.getElementById('difficultySelect');
+    let finalScoreDisplay = document.getElementById('finalScore');
+
+    let score = 0;
+    let gameLoop;
+    let obstacles = [];
+    let isJumping = false;
+    let jumpStart = 0;
+    let difficulty = 'medium';
+    let obstacleSpeed = { easy: 3, medium: 5, hard: 7 };
+
+    function startGame() {
+      score = 0;
+      updateScore();
+      startButton.disabled = true;
+      difficultySelect.style.display = 'none';
+      gameOverScreen.style.display = 'none';
+      obstacles = [];
+      frog.style.bottom = '0px';
+      gameLoop = requestAnimationFrame(gameTick);
+      document.addEventListener('keydown', jump);
+      document.addEventListener('keyup', stopJump);
+    }
+
+    function jump(event) {
+      if (event.code === 'Space' && !isJumping) {
+        isJumping = true;
+        jumpStart = Date.now();
+      }
+    }
+
+    function stopJump() {
+      if (isJumping) {
+        let jumpTime = Date.now() - jumpStart;
+        let jumpHeight = Math.min(jumpTime, 300); // cap the jump height
+        frog.style.bottom = `${jumpHeight}px`;
+        setTimeout(() => {
+          frog.style.bottom = '0px';
+        }, 300); // fall back down after a short delay
+        isJumping = false;
+      }
+    }
+
+    function createObstacle() {
+      let obstacle = document.createElement('div');
+      obstacle.className = 'obstacle';
+      obstacle.style.width = `${Math.random() * 50 + 20}px`;
+      obstacle.style.height = `${Math.random() * 50 + 20}px`;
+      obstacle.style.right = '0px';
+      gameArea.appendChild(obstacle);
+      obstacles.push(obstacle);
+    }
+
+    function moveObstacles() {
+      obstacles.forEach((obstacle, index, object) => {
+        let rightPos = parseFloat(obstacle.style.right) || 0;
+        obstacle.style.right = `${rightPos + obstacleSpeed[difficulty]}px`;
+        if (rightPos > gameArea.offsetWidth) {
+          obstacle.remove();
+          object.splice(index, 1);
+        }
+      });
+    }
+
+    function checkCollision() {
+      let frogRect = frog.getBoundingClientRect();
+      for (let obstacle of obstacles) {
+        let obsRect = obstacle.getBoundingClientRect();
+        if (frogRect.right > obsRect.left && frogRect.left < obsRect.right &&
+          frogRect.bottom > obsRect.top && frogRect.top < obsRect.bottom) {
+          endGame();
+          return;
+        }
+      }
+    }
+
+    function endGame() {
+      cancelAnimationFrame(gameLoop);
+      gameOverScreen.style.display = 'block';
+      finalScoreDisplay.textContent = score;
+      startButton.disabled = false;
+    }
+
+    function updateScore() {
+      score += 1;
+      scoreDisplay.textContent = `Score: ${score}`;
+      scoreDisplay.style.color = score % 2 === 0 ? 'blue' : 'red';
+    }
+
+    function gameTick() {
+      if (Math.random() < 0.02) createObstacle();
+      moveObstacles();
+      checkCollision();
+      updateScore();
+      gameLoop = requestAnimationFrame(gameTick);
+    }
+
+    startButton.addEventListener('click', () => {
+      difficultySelect.style.display = 'block';
+    });
+
+    difficultySelect.querySelector('select').addEventListener('change', function () {
+      difficulty = this.value;
+      startGame();
+    });
+
+    restartButton.addEventListener('click', startGame);
+
+    // Initial state setup
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') e.preventDefault(); // Prevent space from scrolling the page
+    });
+  </script>
+</body>
+
+</html>
