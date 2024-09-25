@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Whack A Rat</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .game-area {
+      background: #90ee90;
+      width: 600px;
+      height: 400px;
+      border-radius: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hole {
+      width: 100px;
+      height: 100px;
+      background: #8b4513;
+      border-radius: 50%;
+      position: absolute;
+      bottom: 0;
+    }
+
+    .rat {
+      background: url('rat-icon.png') no-repeat center;
+      background-size: contain;
+      width: 60px;
+      height: 60px;
+      position: absolute;
+      cursor: pointer;
+      display: none;
+    }
+
+    .score,
+    .timer {
+      position: absolute;
+      top: 10px;
+      color: #333;
+      font-size: 1.2em;
+    }
+
+    .score {
+      left: 10px;
+    }
+
+    .timer {
+      right: 10px;
+    }
+
+    .game-over {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border-radius: 5px;
+      text-align: center;
+      z-index: 10;
+    }
+
+    .restart-btn {
+      background: #4CAF50;
+      border: none;
+      color: white;
+      padding: 15px 32px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="game-area">
+    <div class="score">Score: <span id="score">0</span></div>
+    <div class="timer">Time: <span id="time">30</span>s</div>
+    <div class="hole" style="left: 50px;"></div>
+    <div class="hole" style="left: 250px;"></div>
+    <div class="hole" style="left: 450px;"></div>
+    <div class="rat" id="rat"></div>
+    <div class="game-over" id="gameOver">
+      <h2>Game Over</h2>
+      <p>Your Score: <span id="finalScore"></span></p>
+      <button class="restart-btn" onclick="restartGame()">Restart</button>
+    </div>
+  </div>
+
+  <script>
+    const holes = document.querySelectorAll('.hole');
+    const rat = document.getElementById('rat');
+    const scoreDisplay = document.getElementById('score');
+    const timeDisplay = document.getElementById('time');
+    const gameOverDisplay = document.getElementById('gameOver');
+    const finalScoreDisplay = document.getElementById('finalScore');
+
+    let score = 0;
+    let misses = 0;
+    let gameActive = true;
+    let timeLeft = 30;
+    let timerId;
+    let ratTimerId;
+
+    function showRat() {
+      if (!gameActive) return;
+      const hole = holes[Math.floor(Math.random() * holes.length)];
+      rat.style.left = `${hole.offsetLeft + 20}px`;
+      rat.style.bottom = '100px';
+      rat.style.display = 'block';
+
+      ratTimerId = setTimeout(() => {
+        rat.style.display = 'none';
+        misses++;
+        if (misses >= 3) {
+          endGame();
+        } else {
+          setTimeout(showRat, Math.random() * 1500 + 500);
+        }
+      }, 1500);
+    }
+
+    function startGame() {
+      gameActive = true;
+      score = 0;
+      misses = 0;
+      timeLeft = 30;
+      updateDisplay();
+      timerId = setInterval(() => {
+        if (timeLeft <= 0) {
+          endGame();
+        } else {
+          timeLeft--;
+          timeDisplay.textContent = timeLeft;
+        }
+      }, 1000);
+      showRat();
+    }
+
+    function hitRat() {
+      if (rat.style.display === 'block') {
+        score++;
+        clearTimeout(ratTimerId);
+        rat.style.display = 'none';
+        updateDisplay();
+        setTimeout(showRat, Math.random() * 1500 + 500);
+      } else {
+        misses++;
+        if (misses >= 3) {
+          endGame();
+        }
+      }
+    }
+
+    function endGame() {
+      gameActive = false;
+      clearInterval(timerId);
+      clearTimeout(ratTimerId);
+      gameOverDisplay.style.display = 'block';
+      finalScoreDisplay.textContent = score;
+      rat.style.display = 'none';
+    }
+
+    function updateDisplay() {
+      scoreDisplay.textContent = score;
+    }
+
+    function restartGame() {
+      gameOverDisplay.style.display = 'none';
+      startGame();
+    }
+
+    rat.onclick = hitRat;
+    startGame();
+  </script>
+
+</body>
+
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Whack-a-Rat</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #f0e68c;
+      margin: 0;
+    }
+
+    #game-area {
+      background: url('https://via.placeholder.com/600x400?text=Game+Background') no-repeat center center;
+      background-size: cover;
+      width: 600px;
+      height: 400px;
+      position: relative;
+      border: 5px solid #8b4513;
+    }
+
+    .hole {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background: #8b4513;
+      border-radius: 50%;
+    }
+
+    .rat {
+      font-size: 50px;
+      position: absolute;
+      cursor: pointer;
+      display: none;
+      transform: translate(-50%, -50%);
+    }
+
+    #score,
+    #game-over {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    #game-over {
+      display: none;
+      text-align: center;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+    }
+
+    #restart {
+      cursor: pointer;
+      background: #4CAF50;
+      border: none;
+      color: white;
+      padding: 15px 32px;
+      text-align: center;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="game-area">
+    <div id="score">Score: 0</div>
+    <div id="game-over">
+      <h2>Game Over!</h2>
+      <button id="restart">Restart</button>
+    </div>
+    <!-- Holes can be positioned with CSS or dynamically with JS -->
+    <div class="hole" style="top: 100px; left: 100px;"></div>
+    <div class="hole" style="top: 100px; right: 100px;"></div>
+    <div class="hole" style="bottom: 100px; left: 100px;"></div>
+    <div class="hole" style="bottom: 100px; right: 100px;"></div>
+  </div>
+
+  <script>
+    const gameArea = document.getElementById('game-area');
+    const scoreDisplay = document.getElementById('score');
+    const gameOverDisplay = document.getElementById('game-over');
+    const restartButton = document.getElementById('restart');
+    let score = 0;
+    let misses = 0;
+    let gameInterval;
+    let timeoutId;
+
+    function showRat() {
+      const rat = document.createElement('i');
+      rat.className = 'fas fa-mouse-pointer rat';
+      const holes = document.querySelectorAll('.hole');
+      const randomHole = holes[Math.floor(Math.random() * holes.length)];
+      rat.style.left = `${randomHole.offsetLeft + 50}px`;
+      rat.style.top = `${randomHole.offsetTop + 50}px`;
+      gameArea.appendChild(rat);
+
+      rat.style.display = 'block';
+      setTimeout(() => {
+        rat.style.display = 'none';
+        if (rat.onclick === null) misses++;
+        checkGameOver();
+      }, 2000); // Rat appears for 2 seconds
+    }
+
+    function hitRat(e) {
+      if (e.target.classList.contains('rat')) {
+        score++;
+        scoreDisplay.textContent = `Score: ${score}`;
+        e.target.onclick = null; // Prevent multiple hits on the same rat
+        e.target.style.display = 'none';
+        misses = 0; // Reset misses on hit
+      } else {
+        misses++;
+        checkGameOver();
+      }
+    }
+
+    function checkGameOver() {
+      if (misses >= 3 || timeoutId === null) {
+        clearInterval(gameInterval);
+        gameOverDisplay.style.display = 'block';
+        gameArea.onclick = null; // Disable clicking after game over
+      }
+    }
+
+    function restartGame() {
+      score = 0;
+      misses = 0;
+      scoreDisplay.textContent = 'Score: 0';
+      gameOverDisplay.style.display = 'none';
+      startGame();
+    }
+
+    function startGame() {
+      gameInterval = setInterval(showRat, 3000); // Show rat every 3 seconds
+      gameArea.onclick = hitRat;
+      // Reset timeout every time there's an action
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        misses = 3; // Force game over
+        checkGameOver();
+      }, 30000);
+    }
+
+    restartButton.onclick = restartGame;
+    startGame();
+  </script>
+
+</body>
+
+</html>
