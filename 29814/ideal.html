@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Icon Drop Game</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
+    rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      transition: background-color 1s;
+      font-family: "Roboto", sans-serif;
+      font-weight: 300;
+    }
+
+    .day {
+      background-color: #f0f8ff;
+      color: #333;
+    }
+
+    .night {
+      background-color: #333;
+      color: #f0f8ff;
+    }
+
+    #gameArea {
+      height: 600px;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .icon {
+      position: absolute;
+      cursor: pointer;
+      font-size: 24px;
+    }
+
+    .orange {
+      color: orange;
+    }
+
+    .red {
+      color: red;
+    }
+
+    #scores {
+      text-align: center;
+      padding: 10px;
+      font-size: 50px;
+    }
+
+    .btn {
+      margin-top: 30px;
+      font-size: 25px;
+      padding: 20px;
+      color: #fff;
+      border: 2px solid #333;
+      border-radius: 25px;
+      background-color: #333;
+      cursor: pointer;
+    }
+
+    #gameOver {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      font-weight: bold;
+      text-align: center;
+      color: #f00;
+    }
+  </style>
+</head>
+
+<body class="day">
+  <div id="scores">
+    <span>Score: <span id="score">0</span></span> |
+    <span>High Score: <span id="highScore">0</span></span>
+    <div>
+      <button id="startButton" class="btn">Start Game</button>
+    </div>
+
+  </div>
+  <div id="gameArea"></div>
+  <div id="gameOver">
+    Game Over! <br><button class="btn" onclick="restartGame()">Restart</button>
+  </div>
+
+  <script>
+    let score = 0, highScore = 0, isPlaying = false, interval, mode = 'day';
+    const gameArea = document.getElementById('gameArea');
+    const scoreDisplay = document.getElementById('score');
+    const highScoreDisplay = document.getElementById('highScore');
+    const startButton = document.getElementById('startButton');
+
+    const iconClasses = [
+      'fa-circle',
+      'fa-square',
+      'fa-star',
+      'fa-heart',
+      'fa-bomb'
+    ];
+
+    function startGame() {
+      if (!isPlaying) {
+        isPlaying = true;
+        score = 0;
+        scoreDisplay.textContent = score;
+        startButton.style.display = 'none';
+        dropIcons();
+        interval = setInterval(dropIcons, 1500);
+        document.getElementById('gameOver').style.display = 'none';
+      }
+    }
+
+    function dropIcons() {
+      const icon = document.createElement('i');
+      const size = 60;
+      const left = Math.random() * (gameArea.offsetWidth - size);
+
+      // Randomly choose one of the 5 icons
+      const randomIconClass = iconClasses[Math.floor(Math.random() * iconClasses.length)];
+
+      const type = Math.random() > 0.5 ? 'orange' : 'red';
+      icon.className = `fas ${randomIconClass} icon ${type}`;
+      icon.style.left = `${left}px`;
+      icon.style.fontSize = `${size}px`;
+      icon.onclick = () => clickIcon(icon, type);
+      gameArea.appendChild(icon);
+
+      // Animation for dropping
+      let pos = 0;
+      const dropInterval = setInterval(() => {
+        if (pos >= gameArea.offsetHeight) {
+          clearInterval(dropInterval);
+          gameArea.removeChild(icon);
+        } else {
+          pos += 5;
+          icon.style.top = pos + 'px';
+        }
+      }, 100);
+    }
+
+    function playSound() {
+      const audio = new Audio('https://soundbible.com/mp3/MP5_SMG-GunGuru-703432894.mp3');
+      audio.play();
+    }
+
+    function clickIcon(icon, type) {
+      playSound()
+      gameArea.removeChild(icon);
+      const value = mode === 'day' ? (type === 'orange' ? 5 : -5) : (type === 'orange' ? -5 : 5);
+      updateScore(value);
+    }
+
+    function updateScore(value) {
+      score += value;
+      if (score > highScore) {
+        highScore = score;
+        highScoreDisplay.textContent = highScore;
+      }
+      if (score < 0) {
+        gameOver();
+      } else {
+        scoreDisplay.textContent = score;
+      }
+    }
+
+    function gameOver() {
+      isPlaying = false;
+      clearInterval(interval);
+      document.getElementById('gameOver').style.display = 'block';
+
+      if (score > highScore) {
+        highScore = score;
+        highScoreDisplay.textContent = highScore;
+      }
+    }
+
+    function restartGame() {
+      startGame();
+    }
+
+    function toggleMode() {
+      mode = mode === 'day' ? 'night' : 'day';
+      document.body.className = mode;
+    }
+
+    setInterval(toggleMode, 180000); // 3 minutes
+
+    startButton.addEventListener('click', startGame);
+  </script>
+</body>
+
+</html>

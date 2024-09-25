@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Icon Clicker Game</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      transition: background-color 0.5s, color 0.5s;
+    }
+
+    .day {
+      background-color: #f0f8ff;
+      color: #333;
+    }
+
+    .night {
+      background-color: #333;
+      color: #ddd;
+    }
+
+    #gameArea {
+      width: 300px;
+      height: 500px;
+      border: 2px solid #000;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .icon {
+      position: absolute;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    button {
+      margin: 10px 0;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    #controls,
+    #scores {
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body class="day">
+  <div id="controls">
+    <button onclick="startGame()">Start Game</button>
+    <button onclick="restartGame()" style="display:none;">Restart</button>
+  </div>
+  <div id="scores">
+    Score: <span id="score">0</span> | High Score: <span id="highScore">0</span>
+  </div>
+  <div id="gameArea"></div>
+  <audio id="clickSound" src="click.mp3" preload="auto"></audio>
+  <script>
+    let score = 0;
+    let highScore = 0;
+    let isNight = false;
+    let gameInterval;
+    let dropInterval;
+    const gameArea = document.getElementById('gameArea');
+    const scoreDisplay = document.getElementById('score');
+    const highScoreDisplay = document.getElementById('highScore');
+    const body = document.body;
+
+    function playSound() {
+      document.getElementById('clickSound').play();
+    }
+
+    function startGame() {
+      document.querySelector('#controls button').style.display = 'none';
+      document.querySelector('#controls button:nth-child(2)').style.display = 'block';
+      resetGame();
+      dropIcons();
+      gameInterval = setInterval(checkGameOver, 100);
+      switchMode();
+    }
+
+    function switchMode() {
+      const modeSwitch = setInterval(() => {
+        isNight = !isNight;
+        body.className = isNight ? 'night' : 'day';
+        if (!gameInterval) clearInterval(modeSwitch);
+      }, 180000); // 3 minutes
+    }
+
+    function dropIcons() {
+      dropInterval = setInterval(() => {
+        if (Math.random() > 0.2) { // 80% chance to drop an icon
+          createIcon();
+        }
+      }, 1000);
+    }
+
+    function createIcon() {
+      const icon = document.createElement('i');
+      const isPositive = Math.random() > 0.5;
+      icon.className = `fas fa-circle icon ${isPositive ? (isNight ? 'text-red' : 'text-orange') : (isNight ? 'text-orange' : 'text-red')}`;
+      icon.style.top = '0px';
+      icon.style.left = `${Math.random() * (gameArea.clientWidth - 30)}px`;
+      icon.onclick = function () {
+        score += isPositive ? 5 : -5;
+        if (isNight) score = -score; // Flip the score effect in night mode
+        playSound();
+        this.remove();
+        updateScore();
+      };
+      gameArea.appendChild(icon);
+      // Simple falling animation
+      let pos = 0;
+      const fallInterval = setInterval(() => {
+        if (pos >= gameArea.clientHeight) {
+          icon.remove();
+          clearInterval(fallInterval);
+        } else {
+          pos += 5;
+          icon.style.top = pos + 'px';
+        }
+      }, 50);
+    }
+
+    function updateScore() {
+      scoreDisplay.textContent = score;
+      if (score > highScore) {
+        highScore = score;
+        highScoreDisplay.textContent = highScore;
+      }
+    }
+
+    function checkGameOver() {
+      if (score < 0) {
+        clearInterval(gameInterval);
+        clearInterval(dropInterval);
+        alert('Game Over!');
+      }
+    }
+
+    function restartGame() {
+      startGame();
+    }
+
+    function resetGame() {
+      score = 0;
+      updateScore();
+      gameArea.innerHTML = '';
+    }
+  </script>
+</body>
+
+</html>

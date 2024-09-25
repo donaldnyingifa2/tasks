@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Icon Drop Game</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      transition: background-color 1s;
+    }
+
+    .day {
+      background-color: #e6f3ff;
+      color: #000;
+    }
+
+    .night {
+      background-color: #121212;
+      color: #fff;
+    }
+
+    #game-area {
+      height: 500px;
+      border: 1px solid #ccc;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .icon {
+      position: absolute;
+      cursor: pointer;
+      width: 50px;
+      height: 50px;
+      transition: top 10s linear;
+    }
+
+    .score,
+    .high-score {
+      font-size: 20px;
+    }
+  </style>
+</head>
+
+<body class="day">
+  <div class="container mt-4">
+    <h1>Icon Drop Game</h1>
+    <button id="startBtn" class="btn btn-primary">Start Game</button>
+    <div class="score">Score: <span id="score">0</span></div>
+    <div class="high-score">High Score: <span id="highScore">0</span></div>
+    <div id="game-area"></div>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script>
+    const gameArea = document.getElementById('game-area');
+    let score = 0, highScore = 0, gameInterval, mode = 'day';
+    const icons = ['🍊', '🔴']; // Orange and Red icons
+
+    function playSound() {
+      const audio = new Audio('https://www.freesound.org/data/previews/316/316847_4939433-lq.mp3');
+      audio.play();
+    }
+
+    function dropIcon() {
+      const icon = document.createElement('div');
+      icon.className = 'icon';
+      icon.textContent = icons[Math.floor(Math.random() * icons.length)];
+      icon.style.left = `${Math.random() * (gameArea.offsetWidth - 50)}px`;
+      icon.style.top = '-50px';
+      gameArea.appendChild(icon);
+
+      icon.onclick = function () {
+        const value = (mode === 'day' ? (icon.textContent === '🍊' ? 5 : -5) :
+          (icon.textContent === '🍊' ? -5 : 5));
+        score += value;
+        updateScore();
+        playSound();
+        gameArea.removeChild(icon);
+      };
+
+      setTimeout(() => {
+        if (icon.parentElement) gameArea.removeChild(icon);
+      }, 10000); // Remove if not clicked within 10 seconds
+    }
+
+    function updateScore() {
+      document.getElementById('score').textContent = score;
+      if (score < 0) gameOver();
+      if (score > highScore) {
+        highScore = score;
+        document.getElementById('highScore').textContent = highScore;
+      }
+    }
+
+    function gameOver() {
+      clearInterval(gameInterval);
+      alert('Game Over!');
+      document.getElementById('startBtn').textContent = 'Restart Game';
+    }
+
+    function switchMode() {
+      mode = mode === 'day' ? 'night' : 'day';
+      document.body.className = mode;
+    }
+
+    document.getElementById('startBtn').onclick = function () {
+      score = 0;
+      updateScore();
+      gameInterval = setInterval(dropIcon, 1500);
+      this.textContent = 'Game Running...';
+      this.disabled = true;
+      setTimeout(() => {
+        this.textContent = 'Restart Game';
+        this.disabled = false;
+      }, 10000); // Enable button after first drop
+    };
+
+    setInterval(switchMode, 180000); // Switch mode every 3 minutes
+  </script>
+</body>
+
+</html>
