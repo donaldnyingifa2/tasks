@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Kid's Sudoku</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #f4f4f9;
+    }
+
+    #game-area {
+      width: 360px;
+      margin: 20px auto;
+    }
+
+    .section {
+      border: 2px solid #333;
+      margin: 10px;
+      display: inline-block;
+      background: #fff;
+    }
+
+    .box {
+      width: 40px;
+      height: 40px;
+      border: 1px solid #ddd;
+      display: inline-block;
+      margin: 2px;
+      text-align: center;
+      line-height: 40px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .number {
+      background: #e0e0e0;
+      cursor: move;
+    }
+
+    #numbers {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    button {
+      margin: 10px;
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    #feedback {
+      color: green;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="game-area">
+    <div class="section" id="section1"></div>
+    <div class="section" id="section2"></div>
+    <div class="section" id="section3"></div>
+    <div id="numbers">
+      <!-- Numbers for drag and drop -->
+      <div class="number" draggable="true">0</div>
+      <!-- Repeat for 1-9 -->
+    </div>
+    <button id="submit">Submit</button>
+    <button id="restart">Restart</button>
+    <div id="feedback"></div>
+  </div>
+
+  <script>
+    $(function () {
+      const sections = [1, 2, 3];
+      let correctAnswers = {};
+
+      function initializeGame() {
+        sections.forEach(section => {
+          let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+          let missing = Math.floor(Math.random() * 3) + 2; // 2 or 3 missing numbers
+          correctAnswers[section] = [];
+          for (let i = 0; i < missing; i++) {
+            let index = Math.floor(Math.random() * numbers.length);
+            let num = numbers.splice(index, 1)[0];
+            correctAnswers[section].push(num);
+            $(`#section${section}`).append(`<div class="box empty" data-number="${num}"></div>`);
+          }
+          for (let num of numbers) {
+            $(`#section${section}`).append(`<div class="box">${num}</div>`);
+          }
+        });
+
+        $('.number').draggable({
+          revert: "invalid",
+          helper: "clone"
+        });
+
+        $('.box.empty').droppable({
+          accept: ".number",
+          drop: function (event, ui) {
+            $(this).text(ui.draggable.text()).removeClass('empty');
+          }
+        });
+      }
+
+      $('#submit').on('click', function () {
+        let correct = 0;
+        $('.empty').each(function () {
+          if ($(this).text() == $(this).data('number')) correct++;
+        });
+        $('#feedback').text(`You got ${correct} correct!`);
+      });
+
+      $('#restart').on('click', function () {
+        $('.box').remove();
+        $('#feedback').text('');
+        initializeGame();
+      });
+
+      initializeGame();
+    });
+  </script>
+
+</body>
+
+</html>

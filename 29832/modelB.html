@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kid's Sudoku</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background: #f0f8ff;
+    }
+
+    .game-container {
+      max-width: 600px;
+      margin: 20px auto;
+    }
+
+    .section {
+      display: inline-block;
+      width: 32%;
+      border: 2px solid #4a4a4a;
+      margin: 0.5%;
+      padding: 5px;
+      box-sizing: border-box;
+      background: #fffacd;
+    }
+
+    .box {
+      width: 33.33%;
+      height: 60px;
+      float: left;
+      text-align: center;
+      line-height: 60px;
+      font-size: 24px;
+      border: 1px dashed #ccc;
+    }
+
+    .number-palette div {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      line-height: 40px;
+      margin: 5px;
+      background: #add8e6;
+      cursor: move;
+      border-radius: 50%;
+      text-align: center;
+    }
+
+    .button {
+      margin: 10px 5px;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #feedback {
+      margin-top: 10px;
+      color: green;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="game-container">
+    <div id="game-area"></div>
+    <div class="number-palette">
+      <div draggable="true">0</div>
+      <div draggable="true">1</div>
+      <div draggable="true">2</div>
+      <div draggable="true">3</div>
+      <div draggable="true">4</div>
+      <div draggable="true">5</div>
+      <div draggable="true">6</div>
+      <div draggable="true">7</div>
+      <div draggable="true">8</div>
+      <div draggable="true">9</div>
+    </div>
+    <button class="button" onclick="submitGame()">Submit</button>
+    <button class="button" onclick="restartGame()">Restart</button>
+    <div id="feedback"></div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      const sections = 3;
+      const boxesPerSection = 9;
+      let gameState = initializeGame();
+
+      function initializeGame() {
+        let state = [];
+        for (let i = 0; i < sections; i++) {
+          let section = Array(9).fill().map((_, index) => index + 1 + i * 9);
+          let missing = Math.floor(Math.random() * 3) + 2; // 2 or 3 missing numbers
+          for (let j = 0; j < missing; j++) {
+            let randIndex;
+            do {
+              randIndex = Math.floor(Math.random() * 9);
+            } while (section[randIndex] === 0);
+            section[randIndex] = 0;
+          }
+          state.push(section);
+        }
+        renderGame(state);
+        return state;
+      }
+
+      function renderGame(state) {
+        const gameArea = document.getElementById('game-area');
+        gameArea.innerHTML = '';
+        state.forEach((section, sectionIndex) => {
+          let div = document.createElement('div');
+          div.className = 'section';
+          section.forEach((num, boxIndex) => {
+            let box = document.createElement('div');
+            box.className = 'box';
+            if (num === 0) {
+              box.setAttribute('data-section', sectionIndex);
+              box.setAttribute('data-box', boxIndex);
+              box.ondragover = (e) => e.preventDefault();
+              box.ondrop = drop;
+            } else {
+              box.textContent = num;
+            }
+            div.appendChild(box);
+          });
+          gameArea.appendChild(div);
+        });
+      }
+
+      function drop(e) {
+        e.preventDefault();
+        let number = e.dataTransfer.getData("text");
+        let sectionIndex = e.target.getAttribute('data-section');
+        let boxIndex = e.target.getAttribute('data-box');
+        gameState[sectionIndex][boxIndex] = parseInt(number);
+        e.target.textContent = number;
+      }
+
+      function submitGame() {
+        let correct = 0;
+        gameState.forEach((section, s) => {
+          section.forEach((num, b) => {
+            if (num === b + 1 + s * 9) correct++;
+          });
+        });
+        document.getElementById('feedback').textContent = `You got ${correct} numbers correct!`;
+      }
+
+      function restartGame() {
+        gameState = initializeGame();
+        document.getElementById('feedback').textContent = '';
+      }
+
+      document.querySelectorAll('.number-palette div').forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData("text/plain", e.target.textContent);
+        });
+      });
+    });
+  </script>
+</body>
+
+</html>
